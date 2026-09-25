@@ -16,12 +16,12 @@ def uniqueAppId = "com.webviewapp.${packageSuffix}"
 android {
     // Namespace is used for code generation and R class references (static)
     namespace 'com.vauth.webviewapp'
-    compileSdk 34
+    compileSdk 23
 
     defaultConfig {
         // ApplicationId is the unique identifier for the app in Android (dynamic per build)
         applicationId uniqueAppId
-        minSdk 24
+        minSdk 23
         targetSdk 34
         // Dynamic version code based on timestamp to avoid APK conflicts
         // Using seconds since epoch to ensure each build has unique version
