@@ -25,7 +25,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 /**
  * WebView app with floating navigation buttons.
- * 
+ *
  * Created by: https://github.com/hexxtech
  */
 class MainActivity : AppCompatActivity() {
@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     private var fabGithub: FloatingActionButton? = null
     private var fabBack: FloatingActionButton? = null
     private var fabForward: FloatingActionButton? = null
-    
+
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var geolocationCallback: GeolocationPermissions.Callback? = null
     private var geolocationOrigin: String? = null
@@ -61,8 +61,8 @@ class MainActivity : AppCompatActivity() {
                 val clipData = data?.clipData
                 val uris = if (clipData != null) {
                     // Multiple files selected
-                    (0 until clipData.itemCount).map { 
-                        clipData.getItemAt(it).uri 
+                    (0 until clipData.itemCount).map {
+                        clipData.getItemAt(it).uri
                     }.toTypedArray()
                 } else {
                     // Single file selected
@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
         try {
             val locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                     permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            
+
             geolocationCallback?.invoke(geolocationOrigin, locationGranted, false)
         } catch (e: Exception) {
             Log.e(TAG, "Error handling geolocation permission result", e)
@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity() {
     ) { permissions ->
         try {
             val allGranted = permissions.values.all { it }
-            
+
             pendingPermissionRequest?.let { request ->
                 if (allGranted) {
                     request.grant(request.resources)
@@ -120,9 +120,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Permission request launcher for external storage access on Android 6.0.1+
+    private val storagePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        try {
+            val storageGranted = permissions[Manifest.permission.READ_EXTERNAL_STORAGE] == true ||
+                    permissions[Manifest.permission.WRITE_EXTERNAL_STORAGE] == true
+
+            if (!storageGranted) {
+                Log.w(TAG, "External storage permission denied by user")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling storage permission result", e)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         try {
             // Create the layout programmatically
             container = FrameLayout(this).apply {
@@ -131,7 +147,7 @@ class MainActivity : AppCompatActivity() {
                     FrameLayout.LayoutParams.MATCH_PARENT
                 )
             }
-            
+
             // Create WebView
             webView = WebView(this).apply {
                 layoutParams = FrameLayout.LayoutParams(
@@ -139,7 +155,7 @@ class MainActivity : AppCompatActivity() {
                     FrameLayout.LayoutParams.MATCH_PARENT
                 )
             }
-            
+
             // Create progress bar
             progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
                 layoutParams = FrameLayout.LayoutParams(
@@ -155,7 +171,7 @@ class MainActivity : AppCompatActivity() {
                     android.graphics.PorterDuff.Mode.SRC_IN
                 )
             }
-            
+
             // Create loading overlay with dark background and modern spinner
             loadingOverlay = FrameLayout(this).apply {
                 layoutParams = FrameLayout.LayoutParams(
@@ -164,7 +180,7 @@ class MainActivity : AppCompatActivity() {
                 )
                 setBackgroundColor(ContextCompat.getColor(context, R.color.loadingBackground))
                 visibility = View.VISIBLE // Show initially while first page loads
-                
+
                 // Add circular progress indicator
                 val loadingSpinner = ProgressBar(context).apply {
                     layoutParams = FrameLayout.LayoutParams(
@@ -180,24 +196,27 @@ class MainActivity : AppCompatActivity() {
                 }
                 addView(loadingSpinner)
             }
-            
+
             container?.addView(webView)
             container?.addView(progressBar)
             container?.addView(loadingOverlay)
-            
+
             // Create floating action buttons
             createFloatingButtons()
-            
+
             setContentView(container)
-            
+
             // Setup back press handling after views are created
             setupBackPressHandler()
-            
+
             setupWebView()
-            
+
+            // Request media/storage permissions on Android 6.0.1+ before file access or browser features.
+            requestRuntimePermissionsIfNeeded()
+
             // Load the configured website URL with validation
             val websiteUrl = BuildConfig.WEBSITE_URL
-            
+
             if (websiteUrl.isNullOrBlank()) {
                 Log.e(TAG, "Website URL is null or blank, using default")
                 webView?.loadUrl(DEFAULT_URL)
@@ -207,8 +226,28 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Critical error in onCreate", e)
-            Toast.makeText(this, "Failed to initialize app: \${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Failed to initialize app: ${e.message}", Toast.LENGTH_LONG).show()
             finish()
+        }
+    }
+
+    private fun requestRuntimePermissionsIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+
+        val requiredPermissions = mutableListOf<String>()
+
+        if (!hasPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))) {
+            requiredPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+            requiredPermissions.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+
+        if (!hasPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE))) {
+            requiredPermissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            requiredPermissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+
+        if (requiredPermissions.isNotEmpty()) {
+            storagePermissionLauncher.launch(requiredPermissions.toTypedArray())
         }
     }
 
@@ -217,10 +256,10 @@ class MainActivity : AppCompatActivity() {
             val fabMargin = resources.getDimensionPixelSize(R.dimen.fab_margin)
             val fabSize = resources.getDimensionPixelSize(R.dimen.fab_size)
             val fabButtonSpacing = resources.getDimensionPixelSize(R.dimen.fab_button_spacing)
-            
+
             // Calculate offset for stacked button positioning
             val buttonOffset = fabSize + fabButtonSpacing
-            
+
             // GitHub button - bottom left (first button)
             fabGithub = FloatingActionButton(this).apply {
                 layoutParams = FrameLayout.LayoutParams(
@@ -242,7 +281,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            
+
             // Back button - above GitHub button on the left
             fabBack = FloatingActionButton(this).apply {
                 layoutParams = FrameLayout.LayoutParams(
@@ -266,7 +305,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            
+
             // Forward button - above Back button on the left
             fabForward = FloatingActionButton(this).apply {
                 layoutParams = FrameLayout.LayoutParams(
@@ -290,7 +329,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            
+
             container?.addView(fabGithub)
             container?.addView(fabBack)
             container?.addView(fabForward)
@@ -330,49 +369,49 @@ class MainActivity : AppCompatActivity() {
                 Log.e(TAG, "WebView settings is null, cannot configure")
                 return
             }
-            
+
             settings.apply {
                 // Enable JavaScript
                 javaScriptEnabled = true
-                
+
                 // Enable DOM storage for persistent data
                 domStorageEnabled = true
-                
+
                 // Enable database storage
                 databaseEnabled = true
-                
+
                 // Allow file access
                 allowFileAccess = true
                 allowContentAccess = true
-                
+
                 // Enable zoom controls (hidden)
                 builtInZoomControls = true
                 displayZoomControls = false
-                
+
                 // Support viewport meta tag
                 useWideViewPort = true
                 loadWithOverviewMode = true
-                
+
                 // Enable media playback without gesture
                 mediaPlaybackRequiresUserGesture = false
-                
+
                 // Enable mixed content
                 mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                
+
                 // Cache settings - use cache when available for better performance
                 cacheMode = WebSettings.LOAD_DEFAULT
-                
+
                 // Enable geolocation
                 setGeolocationEnabled(true)
-                
+
                 // Support multiple windows for popups
                 setSupportMultipleWindows(true)
                 javaScriptCanOpenWindowsAutomatically = true
-                
+
                 // Set user agent to indicate mobile app
-                userAgentString = "\$userAgentString WebViewApp/1.0"
+                userAgentString = "$userAgentString WebViewApp/1.0"
             }
-            
+
             // Enable cookie persistence for login sessions
             CookieManager.getInstance().apply {
                 setAcceptCookie(true)
@@ -381,7 +420,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e(TAG, "Error configuring WebView settings", e)
         }
-        
+
         // Custom WebViewClient for handling navigation
         webView?.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -392,7 +431,7 @@ class MainActivity : AppCompatActivity() {
                     Log.e(TAG, "Error in onPageStarted", e)
                 }
             }
-            
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 try {
                     super.onPageFinished(view, url)
@@ -406,35 +445,35 @@ class MainActivity : AppCompatActivity() {
                     Log.e(TAG, "Error in onPageFinished", e)
                 }
             }
-            
+
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 try {
                     val url = request?.url?.toString() ?: return false
-                    
+
                     // Handle special URLs (tel:, mailto:, etc.)
-                    if (url.startsWith("tel:") || url.startsWith("mailto:") || 
+                    if (url.startsWith("tel:") || url.startsWith("mailto:") ||
                         url.startsWith("sms:") || url.startsWith("whatsapp:")) {
                         try {
                             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                         } catch (e: Exception) {
-                            Log.e(TAG, "Cannot open special link: \$url", e)
+                            Log.e(TAG, "Cannot open special link: $url", e)
                             Toast.makeText(this@MainActivity, "Cannot open this link", Toast.LENGTH_SHORT).show()
                         }
                         return true
                     }
-                    
+
                     // Handle external app links
                     if (url.startsWith("intent:")) {
                         try {
                             val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
                             startActivity(intent)
                         } catch (e: Exception) {
-                            Log.e(TAG, "Cannot parse intent URL: \$url", e)
+                            Log.e(TAG, "Cannot parse intent URL: $url", e)
                             // Fallback to browser
                         }
                         return true
                     }
-                    
+
                     // Load URL in WebView
                     return false
                 } catch (e: Exception) {
@@ -442,7 +481,7 @@ class MainActivity : AppCompatActivity() {
                     return false
                 }
             }
-            
+
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 try {
                     super.onReceivedError(view, request, error)
@@ -455,7 +494,7 @@ class MainActivity : AppCompatActivity() {
                             isFirstPageLoad = false
                         }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            Log.e(TAG, "WebView error: \${error?.description}")
+                            Log.e(TAG, "WebView error: ${error?.description}")
                         }
                     }
                 } catch (e: Exception) {
@@ -463,7 +502,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        
+
         // Custom WebChromeClient for handling permissions, file uploads, etc.
         webView?.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
@@ -476,7 +515,7 @@ class MainActivity : AppCompatActivity() {
                     Log.e(TAG, "Error in onProgressChanged", e)
                 }
             }
-            
+
             // Handle file uploads
             override fun onShowFileChooser(
                 webView: WebView?,
@@ -484,9 +523,19 @@ class MainActivity : AppCompatActivity() {
                 fileChooserParams: FileChooserParams?
             ): Boolean {
                 try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                        !hasPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE))) {
+                        storagePermissionLauncher.launch(arrayOf(
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        ))
+                        filePathCallback?.onReceiveValue(null)
+                        return false
+                    }
+
                     fileUploadCallback?.onReceiveValue(null)
                     fileUploadCallback = filePathCallback
-                    
+
                     val intent = fileChooserParams?.createIntent()
                     if (intent != null) {
                         fileChooserLauncher.launch(intent)
@@ -505,7 +554,7 @@ class MainActivity : AppCompatActivity() {
                     return false
                 }
             }
-            
+
             // Handle geolocation permission
             override fun onGeolocationPermissionsShowPrompt(
                 origin: String?,
@@ -514,12 +563,12 @@ class MainActivity : AppCompatActivity() {
                 try {
                     geolocationOrigin = origin
                     geolocationCallback = callback
-                    
+
                     val permissions = arrayOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
                         Manifest.permission.ACCESS_COARSE_LOCATION
                     )
-                    
+
                     if (hasPermissions(permissions)) {
                         callback?.invoke(origin, true, false)
                     } else {
@@ -530,7 +579,7 @@ class MainActivity : AppCompatActivity() {
                     callback?.invoke(origin, false, false)
                 }
             }
-            
+
             // Handle popups / new windows
             override fun onCreateWindow(
                 view: WebView?,
@@ -543,17 +592,17 @@ class MainActivity : AppCompatActivity() {
                         Log.w(TAG, "resultMsg is null in onCreateWindow")
                         return false
                     }
-                    
+
                     val transport = resultMsg.obj as? WebView.WebViewTransport
                     if (transport == null) {
                         Log.w(TAG, "transport is null in onCreateWindow")
                         return false
                     }
-                    
+
                     val newWebView = WebView(this@MainActivity)
                     transport.webView = newWebView
                     resultMsg.sendToTarget()
-                    
+
                     newWebView.webViewClient = object : WebViewClient() {
                         override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                             try {
@@ -570,11 +619,11 @@ class MainActivity : AppCompatActivity() {
                     return false
                 }
             }
-            
+
             // Handle fullscreen video
             private var customView: View? = null
             private var customViewCallback: CustomViewCallback? = null
-            
+
             override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
                 try {
                     customView = view
@@ -585,7 +634,7 @@ class MainActivity : AppCompatActivity() {
                     Log.e(TAG, "Error showing custom view", e)
                 }
             }
-            
+
             override fun onHideCustomView() {
                 try {
                     container?.removeView(customView)
@@ -597,13 +646,13 @@ class MainActivity : AppCompatActivity() {
                     Log.e(TAG, "Error hiding custom view", e)
                 }
             }
-            
+
             // Handle permission requests (camera, microphone)
             override fun onPermissionRequest(request: PermissionRequest?) {
                 try {
                     request?.let { permRequest ->
                         val permissions = mutableListOf<String>()
-                        
+
                         permRequest.resources.forEach { resource ->
                             when (resource) {
                                 PermissionRequest.RESOURCE_VIDEO_CAPTURE -> {
@@ -614,7 +663,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
                         }
-                        
+
                         if (permissions.isEmpty()) {
                             // No special permissions needed, grant the request
                             permRequest.grant(permRequest.resources)
@@ -636,8 +685,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hasPermissions(permissions: Array<String>): Boolean {
-        return permissions.all { 
-            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED 
+        return permissions.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
     }
 
@@ -673,10 +722,10 @@ class MainActivity : AppCompatActivity() {
             geolocationCallback = null
             pendingPermissionRequest?.deny()
             pendingPermissionRequest = null
-            
+
             // Save cookies before cleanup
             CookieManager.getInstance().flush()
-            
+
             // Clean up WebView
             webView?.let { wv ->
                 wv.loadUrl("about:blank")
