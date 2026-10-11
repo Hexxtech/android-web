@@ -1,4 +1,4 @@
-package com.vauth.webviewapp
+package com.hexxtech.webviewapp
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -26,14 +26,14 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 /**
  * WebView app with floating navigation buttons.
  * 
- * Created by: https://github.com/vauth
+ * Created by: https://github.com/hexxtech
  */
 class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
         private const val DEFAULT_URL = "https://example.com"
-        private const val GITHUB_URL = "https://github.com/vauth/android-web"
+        private const val GITHUB_URL = "https://github.com/hexxtech/android-web"
     }
 
     private var webView: WebView? = null
@@ -207,7 +207,7 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Critical error in onCreate", e)
-            Toast.makeText(this, "Failed to initialize app: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Failed to initialize app: \${e.message}", Toast.LENGTH_LONG).show()
             finish()
         }
     }
@@ -370,7 +370,7 @@ class MainActivity : AppCompatActivity() {
                 javaScriptCanOpenWindowsAutomatically = true
                 
                 // Set user agent to indicate mobile app
-                userAgentString = "$userAgentString WebViewApp/1.0"
+                userAgentString = "\$userAgentString WebViewApp/1.0"
             }
             
             // Enable cookie persistence for login sessions
@@ -417,7 +417,7 @@ class MainActivity : AppCompatActivity() {
                         try {
                             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                         } catch (e: Exception) {
-                            Log.e(TAG, "Cannot open special link: $url", e)
+                            Log.e(TAG, "Cannot open special link: \$url", e)
                             Toast.makeText(this@MainActivity, "Cannot open this link", Toast.LENGTH_SHORT).show()
                         }
                         return true
@@ -429,7 +429,7 @@ class MainActivity : AppCompatActivity() {
                             val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
                             startActivity(intent)
                         } catch (e: Exception) {
-                            Log.e(TAG, "Cannot parse intent URL: $url", e)
+                            Log.e(TAG, "Cannot parse intent URL: \$url", e)
                             // Fallback to browser
                         }
                         return true
@@ -455,7 +455,7 @@ class MainActivity : AppCompatActivity() {
                             isFirstPageLoad = false
                         }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            Log.e(TAG, "WebView error: ${error?.description}")
+                            Log.e(TAG, "WebView error: \${error?.description}")
                         }
                     }
                 } catch (e: Exception) {

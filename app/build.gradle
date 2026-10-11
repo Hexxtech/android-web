@@ -15,7 +15,7 @@ def uniqueAppId = "com.webviewapp.${packageSuffix}"
 
 android {
     // Namespace is used for code generation and R class references (static)
-    namespace 'com.vauth.webviewapp'
+    namespace 'com.hexxtech.webviewapp'
     compileSdk 23
 
     defaultConfig {
@@ -30,7 +30,7 @@ android {
         
         // Pass website URL to the app via BuildConfig
         buildConfigField "String", "WEBSITE_URL", "\"${websiteUrl}\""
-        buildConfigField "String", "GITHUB_URL", "\"https://github.com/vauth\""
+        buildConfigField "String", "GITHUB_URL", "\"https://github.com/hexxtech\""
         
         // Set app name
         resValue "string", "app_name", "" + appName
