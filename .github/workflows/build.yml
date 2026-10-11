@@ -123,7 +123,7 @@ jobs:
           echo "release_name=${{ inputs.app_name }}" >> $GITHUB_OUTPUT
           
           # Rename APK to match app name
-          SAFE_NAME=$(echo "${{ inputs.app_name }}\" | tr ' ' '_' | tr -cd '[:alnum:]_')
+          SAFE_NAME=$(echo "${{ inputs.app_name }}" | tr ' ' '_' | tr -cd '[:alnum:]_')
           cp app/build/outputs/apk/debug/app-debug.apk "${SAFE_NAME}.apk"
           echo "apk_path=${SAFE_NAME}.apk" >> $GITHUB_OUTPUT
 
