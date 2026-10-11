@@ -22,7 +22,7 @@ android {
         // ApplicationId is the unique identifier for the app in Android (dynamic per build)
         applicationId uniqueAppId
         minSdk 23
-        targetSdk 34
+        targetSdk 23
         // Dynamic version code based on timestamp to avoid APK conflicts
         // Using seconds since epoch to ensure each build has unique version
         versionCode ((System.currentTimeMillis() / 1000L) as int)
@@ -37,8 +37,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     buildTypes {
@@ -53,7 +53,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = '11'
     }
 }
 
